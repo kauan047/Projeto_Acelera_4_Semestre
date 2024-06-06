@@ -1,0 +1,140 @@
+#include <ESP8266WiFi.h>
+#include <WiFiClient.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+
+#define motorD0 16         // motor direita frente
+#define motorD1 5         // motor direita reverso           
+#define motorD2 4           //motor esquerda frente
+#define motorD3 0        // motor direita reverso           
+#define ledD6  12         // LED
+#define ledD5  14         // LED
+#define ledD4  2          // LED
+#define buzzerD7 13
+String command;
+
+const char* ssid = "xxx";
+const char* password = "xxx";
+
+String site = "";
+
+ESP8266WebServer server(80); // server: http://192.168.4.1
+
+void handleRoot() {
+  site =  "<html>\n";
+  site += "<head><title>Controlador de Robô</title></head>\n";
+  site += "<body style=\"color: blue; text-align: center\">\n";
+  site += "<h1>Controle do Carro com ESP8266</h1>\n";
+  site += "<button onclick=\"sendCommand('F')\">Frente</button>\n";
+  site += "<button onclick=\"sendCommand('B')\">Trás</button>\n";
+  site += "<button onclick=\"sendCommand('L')\">Esquerda</button>\n";
+  site += "<button onclick=\"sendCommand('R')\">Direita</button>\n";
+  site += "<button onclick=\"sendCommand('S')\">Parar</button>\n";
+  site += "<button onclick=\"sendCommand('V')\">Buzina</button>\n";
+  site += "<script>\n";
+  site += "function sendCommand(cmd) {\n";
+  site += "  var xhttp = new XMLHttpRequest();\n";
+  site += "  xhttp.open('GET', '/?State=' + cmd, true);\n";
+  site += "  xhttp.send();\n";
+  site += "}\n";
+  site += "</script>\n";
+  site += "</body>\n";
+  site += "</html>";
+
+
+  server.send(200, "text/html", site);
+
+  site = "";
+}
+
+void setup() {
+  pinMode(motorD0, OUTPUT);
+  pinMode(motorD1, OUTPUT);
+  pinMode(motorD2, OUTPUT);
+  pinMode(motorD3, OUTPUT);
+  pinMode(ledD6, OUTPUT);
+  pinMode(ledD5, OUTPUT);
+  pinMode(ledD4, OUTPUT);
+  pinMode(buzzerD7, OUTPUT);
+
+  WiFi.mode(WIFI_AP); //aceita WIFI_AP / WIFI_AP_STA / WIFI_STA
+  WiFi.softAP(ssid, password);
+  IPAddress myIP = WiFi.softAPIP();
+  server.on("/", handleRoot);
+  server.begin();
+}
+
+
+void BeepHorn() {
+  digitalWrite(buzzerD7, HIGH);
+  delay(500);
+  digitalWrite(buzzerD7, LOW);
+}
+
+void goAhead() {
+  digitalWrite(motorD0, HIGH);
+  digitalWrite(motorD1, LOW);
+  digitalWrite(motorD2, HIGH);
+  digitalWrite(motorD3, LOW);
+}
+
+void goBack() {
+  digitalWrite(motorD0, LOW);
+  digitalWrite(motorD1, HIGH);
+  digitalWrite(motorD2, LOW);
+  digitalWrite(motorD3, HIGH);
+}
+
+void goRight() {
+  digitalWrite(motorD0, HIGH);
+  digitalWrite(motorD1, LOW);
+  digitalWrite(motorD2, LOW);
+  digitalWrite(motorD3, HIGH);
+}
+
+void goLeft() {
+  digitalWrite(motorD0, LOW);
+  digitalWrite(motorD1, HIGH);
+  digitalWrite(motorD2, HIGH);
+  digitalWrite(motorD3, LOW);
+}
+
+void stopRobot() {
+  digitalWrite(motorD0, LOW);
+  digitalWrite(motorD1, LOW);
+  digitalWrite(motorD2, LOW);
+  digitalWrite(motorD3, LOW);
+}
+
+void loop() {
+  // Acende o LED no pino 5 e 6
+  digitalWrite(ledD6, HIGH);
+  digitalWrite(ledD5, HIGH);
+  delay(500); // Espera 500 milissegundos
+  
+  // Apaga o LED no pino 5 e 6
+  digitalWrite(ledD5, LOW);
+  digitalWrite(ledD6, LOW);
+  delay(500); // Espera 500 milissegundos
+  
+  // Acende o LED no pino 4
+  digitalWrite(ledD4, HIGH);
+
+  server.handleClient();
+  
+  command = server.arg("State");
+  if (command == "F") goAhead();
+  else if (command == "B") goBack();
+  else if (command == "L") goLeft();
+  else if (command == "R") goRight();
+  else if (command == "S") stopRobot();
+  else if (command == "V") BeepHorn();
+}
+
+void HTTP_handleRoot(void) {
+  if (server.hasArg("State")) {
+    Serial.println(server.arg("State"));
+  }
+  server.send(200, "text/html", "");
+  delay(1);
+}

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle do Robô com ESP8266</title>
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Controle do Carro com ESP8266</h1>
+    <button onclick="sendCommand('F')">Frente</button>
+    <button onclick="sendCommand('B')">Trás</button>
+    <button onclick="sendCommand('L')">Esquerda</button>
+    <button onclick="sendCommand('R')">Direita</button>
+    <button onclick="sendCommand('S')">Parar</button>
+    <button onclick="sendCommand('V')">Buzina</button>
+
+    <script>
+        function sendCommand(cmd) {
+            fetch('/comando', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ comando: cmd })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+            });
+        }
+    </script>
+</body>
+</html>
